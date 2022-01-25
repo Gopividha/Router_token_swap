@@ -3,11 +3,13 @@
 use {
     crate::{
         add_liquidity::add_liquidity, remove_liquidity::remove_liquidity,
-        swap::swap,
+        swap::swap,stake::stake,unstake::unstake,harvest::harvest,init_vault::init_vault,
+        val_crank1::val_crank1,crank::CrankInstruction
     },
-    solana_farm_sdk::{instruction::amm::AmmInstruction, log::sol_log_params_short},
+    solana_farm_sdk::{instruction::amm::AmmInstruction, },
     solana_program::{
-        account_info::AccountInfo, entrypoint::ProgramResult, log::sol_log_compute_units, msg,
+        account_info::AccountInfo, entrypoint::ProgramResult,
+        msg,
         pubkey::Pubkey,
     },
 };
@@ -23,7 +25,7 @@ pub fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
-    msg!("Valhalla router entrypoint");
+    msg!("Valhalla vault entrypoint");
    
     // Read and unpack instruction data
     let instruction = AmmInstruction::unpack(instruction_data)?;
@@ -53,9 +55,16 @@ pub fn process_instruction(
             token_b_amount_in,
             min_token_amount_out,
         )?,
+        AmmInstruction::Stake { amount } => stake(accounts, amount)?,
+        AmmInstruction::Unstake { amount } => unstake(accounts, amount)?,
+        AmmInstruction::Harvest => harvest(accounts)?,
+        AmmInstruction::InitVault => init_vault(accounts)?,
+
+        AmmInstruction::ValCrank{ step} => CrankInstruction::crank(accounts ,step)?,
+        
        
     }
 
-    msg!("Valhalla router end of instruction");
+    msg!("Valhalla vault end of instruction");
     Ok(())
 }
